@@ -16,24 +16,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Used to cache dependencies with a timeout
       - name: Get Date
         id: get-date
         run: echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
 
-      - name: Cache Buildozer global directory
+      - name: Cache Buildozer Global Directory
         uses: actions/cache@v4
         with:
           path: .buildozer_global
           key: buildozer-global-${{ hashFiles('buildozer.spec') }}
 
-      - name: Cache .buildozer directory
+      - name: Cache .buildozer Directory
         uses: actions/cache@v4
         with:
           path: .buildozer
           key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-      - name: Install dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt update
           sudo apt-get install -y \
@@ -70,7 +69,6 @@ jobs:
             pkg-config \
             libncurses5-dev \
             libncursesw5-dev \
-            libtinfo5 \
             cmake \
             libffi-dev \
             libssl-dev \
