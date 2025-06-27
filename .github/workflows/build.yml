@@ -1,60 +1,50 @@
 name: Android Build (Kivy)
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.8'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
 
-    - name: Cache Buildozer Global
-      uses: actions/cache@v4
-      with:
-        path: ~/.buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip python3-setuptools libffi-dev libssl-dev
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          python3-pip python3-setuptools git zip unzip \
-          openjdk-17-jdk wget libffi-dev libssl-dev \
-          libsqlite3-dev zlib1g-dev libncursesw5-dev \
-          libtinfo6 libgdbm-dev libbz2-dev liblzma-dev \
-          libreadline-dev libgstreamer1.0-0 gstreamer1.0-plugins-base \
-          gstreamer1.0-plugins-good ffmpeg libavcodec-dev libavformat-dev \
-          libswscale-dev autoconf libtool pkg-config
+      - name: Set environment
+        run: |
+          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
-    - name: Install Apache ANT manually
-      run: |
-        wget https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.4-bin.tar.gz
-        tar -xzf apache-ant-1.9.4-bin.tar.gz
-        sudo mv apache-ant-1.9.4 /opt/apache-ant
-        echo "/opt/apache-ant/bin" >> $GITHUB_PATH
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses
 
-    - name: Install Python dependencies
-      run: |
-        pip install --upgrade pip
-        pip install cython==0.29.33 buildozer
+      - name: Install Build Tools
+        run: sdkmanager "build-tools;34.0.0" "platforms;android-31"
 
-    - name: Build APK with Buildozer
-      run: |
-        buildozer -v android debug
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: kivy-apk
-        path: bin/*.apk
+      - name: Build APK
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hello-world-apk
+          path: bin/*.apk
